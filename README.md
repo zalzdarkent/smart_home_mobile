@@ -2,7 +2,9 @@
 
 Aplikasi Flutter untuk monitoring dan kontrol perangkat IoT Smart Home berbasis ESP32 dengan real-time sensor data dan remote control.
 
-![Smart Home Dashboard](public/evidence/image.png)
+<p align="center">
+  <img src="public/evidence/image.png" alt="Smart Home Dashboard" width="300">
+</p>
 
 ## ✨ Features
 
@@ -139,7 +141,10 @@ dependencies:
 ## 📱 Screenshots
 
 ### Dashboard View
-![Dashboard](public/evidence/image.png)
+
+<p align="center">
+  <img src="public/evidence/image.png" alt="Dashboard" width="300">
+</p>
 
 *Real-time monitoring dengan kontrol panel yang intuitif*
 
