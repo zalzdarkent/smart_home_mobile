@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import '../services/api_service.dart';
+import '../services/mqtt_service.dart';
 
 class DashboardController extends ChangeNotifier {
-  final ApiService _apiService = ApiService();
-  Timer? _refreshTimer;
+  final MqttService _mqttService = MqttService();
+  StreamSubscription? _statusSubscription;
 
   Map<String, dynamic>? deviceInfo;
   bool isLoading = true;
@@ -15,85 +15,157 @@ class DashboardController extends ChangeNotifier {
   bool doorStatus = false;
   double temperature = 0.0;
   double humidity = 0.0;
-  int distance = 0;
+  double distance = 0.0;
   int motion = 0;
 
-  void initialize() {
-    loadData();
-    _refreshTimer = Timer.periodic(
-      const Duration(seconds: 2),
-      (_) => fetchStatus(),
-    );
+  void initialize() async {
+    await connectToMqtt();
+    setupStatusListener();
   }
 
+  @override
   void dispose() {
-    _refreshTimer?.cancel();
+    _statusSubscription?.cancel();
+    _mqttService.dispose();
     super.dispose();
   }
 
-  Future<void> loadData() async {
-    await fetchStatus();
-    await fetchDeviceInfo();
-  }
+  Future<void> connectToMqtt() async {
+    isLoading = true;
+    errorMessage = null;
+    notifyListeners();
 
-  Future<void> fetchStatus() async {
     try {
-      final data = await _apiService.fetchStatus();
-      if (data != null) {
-        temperature = (data['temperature'] as num).toDouble();
-        humidity = (data['humidity'] as num).toDouble();
-        distance = data['distance'] as int;
-        motion = data['motion'] as int;
-        ledStatus = data['led'] == 1;
-        doorStatus = data['door'] == 1;
-        manualMode = data['manualMode'] as bool;
+      final connected = await _mqttService.connect();
+      if (connected) {
         isLoading = false;
         errorMessage = null;
-        notifyListeners();
+      } else {
+        errorMessage = 'Failed to connect to MQTT broker';
+        isLoading = false;
       }
     } catch (e) {
-      errorMessage = e.toString();
+      errorMessage = 'MQTT connection error: $e';
       isLoading = false;
+    }
+    notifyListeners();
+  }
+
+  void setupStatusListener() {
+    print('🎯 Setting up MQTT status listener...');
+    _statusSubscription = _mqttService.statusStream.listen(
+      (data) {
+        print('🎯 Received data from MQTT stream: $data');
+        updateFromMqttData(data);
+      },
+      onError: (error) {
+        print('❌ MQTT stream error: $error');
+        errorMessage = 'MQTT stream error: $error';
+        notifyListeners();
+      },
+      onDone: () {
+        print('⚠️ MQTT stream closed');
+      },
+    );
+  }
+
+  void updateFromMqttData(Map<String, dynamic> data) {
+    try {
+      print('🔄 Updating from MQTT data: $data');
+      
+      // Check both field name formats (temp/temperature, hum/humidity, etc.)
+      temperature = (data['temperature'] as num?)?.toDouble() ?? 
+                   (data['temp'] as num?)?.toDouble() ?? 0.0;
+      humidity = (data['humidity'] as num?)?.toDouble() ?? 
+                (data['hum'] as num?)?.toDouble() ?? 0.0;
+      distance = (data['distance'] as num?)?.toDouble() ?? 
+                (data['dist'] as num?)?.toDouble() ?? 0.0;
+      motion = (data['motion'] as num?)?.toInt() ?? 0;
+      ledStatus = (data['led'] as num?) == 1;
+      
+      // For door, check if it's a servo position (0-180) or binary (0/1)
+      final doorValue = data['door'] as num?;
+      if (doorValue != null) {
+        // If door value is > 45 degrees, consider it open
+        doorStatus = doorValue > 45;
+      }
+      
+      print('📊 Parsed values:');
+      print('   Temperature: $temperature°C');
+      print('   Humidity: $humidity%');
+      print('   Distance: $distance cm');
+      print('   Motion: $motion');
+      print('   LED: $ledStatus');
+      print('   Door: $doorStatus (raw: $doorValue)');
+      
+      // Parse mode from string or boolean
+      final modeValue = data['mode'];
+      if (modeValue is String) {
+        manualMode = modeValue.toLowerCase() == 'manual';
+      } else if (modeValue is bool) {
+        manualMode = modeValue;
+      }
+      print('   Mode: $manualMode (${manualMode ? 'MANUAL' : 'AUTO'})');
+
+      isLoading = false;
+      errorMessage = null;
+      notifyListeners();
+    } catch (e) {
+      print('❌ Error parsing MQTT data: $e');
+      errorMessage = 'Error parsing MQTT data: $e';
       notifyListeners();
     }
   }
 
-  Future<void> fetchDeviceInfo() async {
-    final data = await _apiService.fetchDeviceInfo();
-    if (data != null) {
-      deviceInfo = data;
-      notifyListeners();
+  // Keep this for fallback or initial load if needed
+  Future<void> loadData() async {
+    // For MQTT, we rely on real-time stream data
+    // This method can be used for manual refresh
+    if (!_mqttService.isConnected) {
+      await connectToMqtt();
     }
   }
 
   Future<String?> handleLED(bool value) async {
-    if (await _apiService.controlLED(value)) {
-      await fetchStatus();
-      return 'LED ${value ? 'ON' : 'OFF'}';
+    try {
+      final success = await _mqttService.controlLED(value);
+      if (success) {
+        return 'LED ${value ? 'ON' : 'OFF'}';
+      }
+      return 'Failed to control LED';
+    } catch (e) {
+      return 'Error: $e';
     }
-    return null;
   }
 
   Future<String?> handleDoor(bool value) async {
-    if (await _apiService.controlDoor(value)) {
-      await fetchStatus();
-      return 'Door ${value ? 'OPENED' : 'CLOSED'}';
+    try {
+      final success = await _mqttService.controlDoor(value);
+      if (success) {
+        return 'Door ${value ? 'OPENED' : 'CLOSED'}';
+      }
+      return 'Failed to control Door';
+    } catch (e) {
+      return 'Error: $e';
     }
-    return null;
   }
 
   Future<String?> handleMode(bool value) async {
-    if (await _apiService.controlMode(value)) {
-      await fetchStatus();
-      return 'Mode: ${value ? 'MANUAL' : 'AUTO'}';
+    try {
+      final success = await _mqttService.controlMode(value);
+      if (success) {
+        return 'Mode: ${value ? 'MANUAL' : 'AUTO'}';
+      }
+      return 'Failed to change mode';
+    } catch (e) {
+      return 'Error: $e';
     }
-    return null;
   }
 
   void retry() {
     isLoading = true;
     errorMessage = null;
     notifyListeners();
-    fetchStatus();
+    connectToMqtt();
   }
 }

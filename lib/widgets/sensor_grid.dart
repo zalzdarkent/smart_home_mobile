@@ -4,7 +4,7 @@ import '../components/sensor_card.dart';
 class SensorGrid extends StatelessWidget {
   final double temperature;
   final double humidity;
-  final int distance;
+  final double distance;
   final int motion;
 
   const SensorGrid({
@@ -42,7 +42,7 @@ class SensorGrid extends StatelessWidget {
         SensorCard(
           icon: Icons.straighten,
           label: 'Distance',
-          value: '$distance cm',
+          value: '${distance.toStringAsFixed(1)} cm',
           color: Colors.purple,
           iconColor: Colors.purpleAccent,
         ),
