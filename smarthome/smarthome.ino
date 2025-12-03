@@ -314,8 +314,8 @@ void taskKontrolLampu(void *pvParameters) {
       if (manualMode) {
         ledState = manualLedState;
       } else {
-        // Mode otomatis: nyala jika ada gerakan
-        ledState = (motionState == HIGH) ? HIGH : LOW;
+        // Mode otomatis: nyala jika ada gerakan DAN suhu > 30°C
+        ledState = (motionState == HIGH && temperature > 30.0) ? HIGH : LOW;
       }
       xSemaphoreGive(sensorDataMutex);
     }
@@ -338,8 +338,8 @@ void taskKontrolPintu(void *pvParameters) {
       if (manualMode) {
         targetPos = manualServoPos;
       } else {
-        // Mode otomatis: buka jika jarak < 30cm
-        targetPos = (distance > 0 && distance < 30) ? 90 : 0;
+        // Mode otomatis: buka jika ada gerakan DAN objek < 20cm
+        targetPos = (motionState == HIGH && distance > 0 && distance < 20) ? 90 : 0;
       }
       xSemaphoreGive(sensorDataMutex);
     }
