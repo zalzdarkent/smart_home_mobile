@@ -36,15 +36,19 @@ class DashboardController extends ChangeNotifier {
     notifyListeners();
 
     try {
+      print('🔌 Attempting MQTT connection...');
       final connected = await _mqttService.connect();
       if (connected) {
+        print('✅ MQTT Connected successfully!');
         isLoading = false;
         errorMessage = null;
       } else {
+        print('❌ MQTT Connection failed!');
         errorMessage = 'Failed to connect to MQTT broker';
         isLoading = false;
       }
     } catch (e) {
+      print('❌ MQTT Connection error: $e');
       errorMessage = 'MQTT connection error: $e';
       isLoading = false;
     }

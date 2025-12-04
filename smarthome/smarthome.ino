@@ -171,29 +171,81 @@ void handleRoot() {
   sendCORSHeaders();
   String html = "<!DOCTYPE html><html><head><meta charset='UTF-8'>";
   html += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>";
-  html += "<title>Smart Home Control</title>";
-  html += "<style>body{font-family:Arial;max-width:800px;margin:50px auto;padding:20px;}";
-  html += ".card{background:#f0f0f0;padding:20px;margin:10px 0;border-radius:10px;}";
-  html += "button{padding:10px 20px;margin:5px;font-size:16px;cursor:pointer;border-radius:5px;}";
-  html += ".on{background:#4CAF50;color:white;border:none;}";
-  html += ".off{background:#f44336;color:white;border:none;}</style></head><body>";
-  html += "<h1>🏠 Smart Home Dashboard</h1>";
+  html += "<title>Smart Home Dashboard</title>";
+  html += "<style>";
+  html += "*{margin:0;padding:0;box-sizing:border-box;}";
+  html += "body{font-family:'Segoe UI',Tahoma,sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;padding:20px;}";
+  html += ".container{max-width:500px;margin:0 auto;}";
+  html += "h1{color:#fff;text-align:center;font-size:28px;margin-bottom:30px;font-weight:600;}";
+  html += ".card{background:#fff;border-radius:20px;padding:25px;margin-bottom:20px;box-shadow:0 10px 30px rgba(0,0,0,0.2);}";
+  html += ".card-title{color:#4a5568;font-size:18px;font-weight:600;margin-bottom:20px;text-align:center;}";
+  html += ".sensor-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;}";
+  html += ".sensor-item{text-align:center;padding:15px;background:#f7fafc;border-radius:12px;}";
+  html += ".sensor-icon{font-size:24px;margin-bottom:8px;}";
+  html += ".sensor-label{color:#718096;font-size:12px;margin-bottom:5px;}";
+  html += ".sensor-value{color:#2d3748;font-size:20px;font-weight:700;}";
+  html += ".mode-btn{width:100%;padding:15px;border:none;border-radius:12px;font-size:16px;font-weight:600;cursor:pointer;margin-bottom:15px;transition:all 0.3s;}";
+  html += ".mode-manual{background:#3182ce;color:#fff;}";
+  html += ".mode-auto{background:#48bb78;color:#fff;}";
+  html += ".mode-auto.active{background:#2f855a;}";
+  html += ".mode-status{text-align:center;color:#718096;font-size:14px;margin-bottom:15px;}";
+  html += ".control-title{color:#4a5568;font-size:16px;font-weight:600;margin:20px 0 15px 0;}";
+  html += ".control-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:15px;}";
+  html += ".control-label{color:#4a5568;font-size:15px;font-weight:500;}";
+  html += ".toggle-group{display:flex;gap:10px;}";
+  html += ".toggle-btn{padding:8px 20px;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.3s;}";
+  html += ".btn-open{background:#3182ce;color:#fff;}";
+  html += ".btn-close{background:#e53e3e;color:#fff;}";
+  html += ".btn-on{background:#48bb78;color:#fff;}";
+  html += ".btn-off{background:#718096;color:#fff;}";
+  html += ".toggle-btn:hover{opacity:0.8;transform:translateY(-2px);}";
+  html += "@media(max-width:600px){.container{padding:10px;}h1{font-size:24px;}}";
+  html += "</style></head><body>";
+  html += "<div class='container'>";
+  html += "<h1>Smart Home Dashboard</h1>";
   
-  html += "<div class='card'><h2>📊 Status Sensor</h2>";
-  html += "<p>🌡️ Suhu: " + String(temperature) + " °C</p>";
-  html += "<p>💧 Kelembaban: " + String(humidity) + " %</p>";
-  html += "<p>📏 Jarak: " + String(distance) + " cm</p>";
-  html += "<p>🚶 Gerakan: " + String(motionState == HIGH ? "Terdeteksi" : "Tidak Ada") + "</p></div>";
+  // Status Ruangan Card
+  html += "<div class='card'>";
+  html += "<div class='card-title'>Status Ruangan</div>";
+  html += "<div class='sensor-grid'>";
+  html += "<div class='sensor-item'><div class='sensor-icon'>🌡️</div><div class='sensor-label'>Suhu</div><div class='sensor-value'>" + String(temperature, 1) + " °C</div></div>";
+  html += "<div class='sensor-item'><div class='sensor-icon'>💧</div><div class='sensor-label'>Kelembaban</div><div class='sensor-value'>" + String(humidity, 0) + " %</div></div>";
+  html += "<div class='sensor-item'><div class='sensor-icon'>📏</div><div class='sensor-label'>Jarak</div><div class='sensor-value'>" + String(distance, 0) + " cm</div></div>";
+  html += "<div class='sensor-item'><div class='sensor-icon'>🔥</div><div class='sensor-label'>Gerakan</div><div class='sensor-value'>" + String(motionState == HIGH ? "⚠️" : "--") + "</div></div>";
+  html += "</div></div>";
   
-  html += "<div class='card'><h2>🎛️ Kontrol</h2>";
-  html += "<p>Mode: <strong>" + String(manualMode ? "MANUAL" : "OTOMATIS") + "</strong></p>";
-  html += "<button class='on' onclick=\"fetch('/api/mode?val=1')\">Mode Manual</button>";
-  html += "<button class='off' onclick=\"fetch('/api/mode?val=0')\">Mode Otomatis</button><br><br>";
-  html += "<button class='on' onclick=\"fetch('/api/led?val=1')\">💡 Lampu ON</button>";
-  html += "<button class='off' onclick=\"fetch('/api/led?val=0')\">💡 Lampu OFF</button><br><br>";
-  html += "<button class='on' onclick=\"fetch('/api/door?val=1')\">🚪 Buka Pintu</button>";
-  html += "<button class='off' onclick=\"fetch('/api/door?val=0')\">🚪 Tutup Pintu</button></div>";
+  // Kontrol Sistem Card
+  html += "<div class='card'>";
+  html += "<div class='card-title'>Kontrol Sistem</div>";
+  html += "<div class='mode-section'><div class='mode-status'><strong>Mode Sistem</strong></div>";
+  html += "<button class='mode-btn " + String(manualMode ? "mode-manual" : "mode-auto active") + "' onclick=\"fetch('/api/mode?val=" + String(manualMode ? "0" : "1") + "').then(()=>setTimeout(()=>location.reload(),500))\">";
+  html += manualMode ? "Beralih ke Mode MANUAL" : "Beralih ke Mode OTOMATIS Aktif";
+  html += "</button></div>";
   
+  html += "<div style='text-align:center;background:#edf2f7;padding:10px;border-radius:8px;margin:15px 0;'>";
+  html += "<span style='color:#4a5568;font-weight:600;'>Mode OTOMATIS Aktif</span></div>";
+  
+  html += "<div class='control-title'>Kontrol Manual</div>";
+  
+  // Lampu LED Control
+  html += "<div class='control-row'>";
+  html += "<span class='control-label'>Lampu (LED)</span>";
+  html += "<div class='toggle-group'>";
+  int ledState = digitalRead(LED_PIN);
+  html += "<button class='toggle-btn " + String(ledState ? "btn-on" : "btn-off") + "' style='min-width:80px;' onclick=\"fetch('/api/led?val=" + String(ledState ? "0" : "1") + "').then(()=>setTimeout(()=>location.reload(),500))\">";
+  html += ledState ? "ON" : "OFF";
+  html += "</button></div></div>";
+  
+  // Pintu Servo Control
+  html += "<div class='control-row'>";
+  html += "<span class='control-label'>Pintu (Servo)</span>";
+  html += "<div class='toggle-group'>";
+  int doorState = doorServo.read();
+  html += "<button class='toggle-btn btn-open' onclick=\"fetch('/api/door?val=1').then(()=>setTimeout(()=>location.reload(),500))\">Buka</button>";
+  html += "<button class='toggle-btn btn-close' onclick=\"fetch('/api/door?val=0').then(()=>setTimeout(()=>location.reload(),500))\">Tutup</button>";
+  html += "</div></div>";
+  
+  html += "</div></div>";
   html += "<script>setInterval(()=>location.reload(),5000);</script>";
   html += "</body></html>";
   
@@ -280,11 +332,22 @@ void taskBacaSensor(void *pvParameters) {
     int motionLocal = digitalRead(PIR_PIN);
     float distLocal = bacaJarakUltrasonic();
     
+    // Error handling untuk DHT22
+    if (isnan(tempLocal) || isnan(humLocal)) {
+      Serial.println("⚠️  DHT22 Error: NaN detected, keeping previous values");
+      // Jangan update nilai, pakai nilai sebelumnya
+    } else {
+      if (xSemaphoreTake(sensorDataMutex, portMAX_DELAY) == pdTRUE) {
+        temperature = tempLocal;
+        humidity = humLocal;
+        xSemaphoreGive(sensorDataMutex);
+      }
+    }
+    
+    // Update sensor lain (PIR dan Ultrasonic)
     if (xSemaphoreTake(sensorDataMutex, portMAX_DELAY) == pdTRUE) {
-      if (!isnan(tempLocal)) temperature = tempLocal;
-      if (!isnan(humLocal)) humidity = humLocal;
       motionState = motionLocal;
-      distance = distLocal;
+      if (distLocal > 0) distance = distLocal; // Only update if valid
       xSemaphoreGive(sensorDataMutex);
     }
     
@@ -292,8 +355,13 @@ void taskBacaSensor(void *pvParameters) {
     static int readCount = 0;
     if (readCount % 5 == 0) {
       Serial.println("📊 Sensor Reading:");
-      Serial.printf("   Temp: %.2f°C | Hum: %.2f%% | Dist: %.2fcm | Motion: %s\n", 
-                    temperature, humidity, distance, motionState ? "YES" : "NO");
+      Serial.printf("   Temp: %.2f°C (raw: %.2f) | Hum: %.2f%% (raw: %.2f)\n", 
+                    temperature, tempLocal, humidity, humLocal);
+      Serial.printf("   Dist: %.2fcm | Motion: %s\n", 
+                    distance, motionState ? "YES" : "NO");
+      if (isnan(tempLocal) || isnan(humLocal)) {
+        Serial.println("   ⚠️  DHT22 mengembalikan NaN - cek koneksi sensor!");
+      }
     }
     readCount++;
     
@@ -388,6 +456,10 @@ void taskBroadcastData(void *pvParameters) {
   (void) pvParameters;
   TickType_t xLastWakeTime = xTaskGetTickCount();
   
+  // Tunggu sensor baca data dulu (5 detik pertama)
+  Serial.println("Broadcast task: Menunggu sensor membaca data...");
+  vTaskDelay(5000 / portTICK_PERIOD_MS);
+  
   for(;;) {
     // Tunggu notifikasi ATAU timeout 5 detik (kirim periodik)
     ulTaskNotifyTake(pdTRUE, 5000 / portTICK_PERIOD_MS);
@@ -419,10 +491,14 @@ void taskBroadcastData(void *pvParameters) {
       Blynk.virtualWrite(V6, motionLocal);
     }
     
-    // Kirim ke MQTT
+    // Kirim ke MQTT (kirim walaupun temp/hum NaN, yang penting sensor lain tetap terkirim)
     if (client.connected()) {
-      String payload = "{\"temp\":" + String(tempLocal, 2) + 
-                      ",\"hum\":" + String(humLocal, 2) +
+      // Handle NaN values - ganti dengan 0 atau nilai default untuk JSON
+      float tempToSend = isnan(tempLocal) ? 0.0 : tempLocal;
+      float humToSend = isnan(humLocal) ? 0.0 : humLocal;
+      
+      String payload = "{\"temp\":" + String(tempToSend, 2) + 
+                      ",\"hum\":" + String(humToSend, 2) +
                       ",\"dist\":" + String(distLocal, 2) +
                       ",\"motion\":" + String(motionLocal) +
                       ",\"led\":" + String(ledState) +
@@ -438,8 +514,8 @@ void taskBroadcastData(void *pvParameters) {
         Serial.printf("   Topic: %s\n", mqtt_topic_status);
         Serial.printf("   Payload: %s\n", payload.c_str());
         Serial.println("   Data breakdown:");
-        Serial.printf("   - Temperature: %.2f°C\n", tempLocal);
-        Serial.printf("   - Humidity: %.2f%%\n", humLocal);
+        Serial.printf("   - Temperature: %.2f°C %s\n", tempToSend, isnan(tempLocal) ? "(NaN - sent as 0)" : "");
+        Serial.printf("   - Humidity: %.2f%% %s\n", humToSend, isnan(humLocal) ? "(NaN - sent as 0)" : "");
         Serial.printf("   - Distance: %.2f cm\n", distLocal);
         Serial.printf("   - Motion: %s\n", motionLocal ? "DETECTED" : "None");
         Serial.printf("   - LED: %s\n", ledState ? "ON" : "OFF");
@@ -553,7 +629,6 @@ void setup() {
   lcd.print("Connecting WiFi...");
   
   // Init Hardware
-  dht.begin();
   pinMode(PIR_PIN, INPUT);
   pinMode(LED_PIN, OUTPUT);
   pinMode(TRIG_PIN, OUTPUT);
@@ -561,12 +636,28 @@ void setup() {
   doorServo.attach(SERVO_PIN);
   doorServo.write(0);
   
-  // Baca sensor pertama kali (biar ga NAN)
-  delay(2000); // DHT22 butuh waktu startup
-  temperature = dht.readTemperature();
-  humidity = dht.readHumidity();
-  if (isnan(temperature)) temperature = 0.0;
-  if (isnan(humidity)) humidity = 0.0;
+  // Init DHT22 dengan delay lebih lama
+  dht.begin();
+  Serial.println("Menunggu DHT22 siap...");
+  delay(3000); // DHT22 butuh waktu startup minimal 2-3 detik
+  
+  // Baca sensor pertama kali dengan retry (biar ga NAN)
+  Serial.println("Membaca sensor DHT22 pertama kali...");
+  for (int i = 0; i < 5; i++) {
+    temperature = dht.readTemperature();
+    humidity = dht.readHumidity();
+    
+    if (!isnan(temperature) && !isnan(humidity)) {
+      Serial.printf("✅ DHT22 OK: T=%.2f°C, H=%.2f%%\n", temperature, humidity);
+      break;
+    }
+    
+    Serial.printf("Retry %d/5...\n", i+1);
+    delay(2000);
+  }
+  
+  if (isnan(temperature)) temperature = 25.0; // Default value
+  if (isnan(humidity)) humidity = 50.0; // Default value
   
   // Connect WiFi
   Serial.print("Connecting to ");
